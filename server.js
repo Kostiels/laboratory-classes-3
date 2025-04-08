@@ -5,25 +5,21 @@ const bodyParser = require("body-parser");
 
 const { PORT } = require("./config");
 const logger = require("./utils/logger");
-const productRoutes = require("./routing/product");
+const productsRoutes = require("./routing/products");
 const logoutRoutes = require("./routing/logout");
 const killRoutes = require("./routing/kill");
 const homeRoutes = require("./routing/home");
 const { STATUS_CODE } = require("./constants/statusCode");
-// 📦 Dependy the Importer
-// Zaimportuj moduł 'getFileFromAbsolutePath', może Ci się przydać do ustawienia katalogu plików statycznych!
+const getFileFromAbsolutePath = require("./utils/getFileFromAbsolutePath");
 
 const app = express();
 
-// 🔧 Configo the Setter
-// Zarejestruj "view engine" jako "ejs".
-// Podpowiedź: app.set(...);
-// Zarejestruj "views" jako "views".
-// Podpowiedź: app.set(...);
 
-// 🔧 Configo the Setter
-// Ustaw publiczny katalog plików statycznych w middleware.
-// Podpowiedź: app.use(express.static(...));
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -34,16 +30,22 @@ app.use((request, _response, next) => {
   next();
 });
 
-app.use("/product", productRoutes);
+app.use("/products", productsRoutes);
 app.use("/logout", logoutRoutes);
 app.use("/kill", killRoutes);
 app.use(homeRoutes);
 app.use((request, response) => {
   const { url } = request;
 
-  response
-    .status(STATUS_CODE.NOT_FOUND)
-    .sendFile(path.join(__dirname, "./views", "404.html"));
+  const { MENU_LINKS } = require("./constants/navigation");
+  
+  response.status(STATUS_CODE.NOT_FOUND).render("404", {
+    headTitle: "Page Not Found",
+    path: url,
+    menuLinks: MENU_LINKS,
+    activeLinkPath: url
+  });
+  
   logger.getErrorLog(url);
 });
 
